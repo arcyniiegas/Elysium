@@ -1,0 +1,7 @@
+{
+  "name": "Elysium - A Romantic Noir Odyssey",
+  "description": "A sophisticated, modern noir digital gift featuring a daily wheel of fortune, collectible romantic reasons, and tickets to Brazil's most iconic museums.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
