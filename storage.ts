@@ -36,5 +36,20 @@ export const getCurrentJourneyDay = (state: UserState): number => {
 };
 
 export const canSpinToday = (state: UserState): boolean => {
-  return state.spinHistory.length < 25;
+  // Total limit check
+  if (state.spinHistory.length >= 25) return false;
+  
+  // Daily limit check
+  if (!state.lastSpinDate) return true;
+  
+  const lastSpin = new Date(state.lastSpinDate);
+  const now = new Date();
+  
+  // Compare local calendar dates
+  const isSameDay = 
+    lastSpin.getDate() === now.getDate() &&
+    lastSpin.getMonth() === now.getMonth() &&
+    lastSpin.getFullYear() === now.getFullYear();
+    
+  return !isSameDay;
 };

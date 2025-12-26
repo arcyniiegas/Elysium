@@ -53,7 +53,14 @@ const BackgroundMusic = forwardRef<BackgroundMusicRef, BackgroundMusicProps>(({ 
         audioCtxRef.current.resume();
       }
       if (audioRef.current) {
-        audioRef.current.play().catch(e => console.warn("BackgroundMusic: Play failed on unlock", e));
+        // iOS: The element must be played during the touch event
+        audioRef.current.play()
+          .then(() => {
+             // If we shouldn't actually be playing yet, pause it. 
+             // But it is now "blessed" for later.
+             if (!shouldPlay) audioRef.current?.pause();
+          })
+          .catch(e => console.warn("BackgroundMusic: Mobile Unlock Failed", e));
       }
     }
   }));
@@ -64,6 +71,8 @@ const BackgroundMusic = forwardRef<BackgroundMusicRef, BackgroundMusicProps>(({ 
         audioCtxRef.current.resume();
       }
       audioRef.current.play().catch(e => console.warn("BackgroundMusic: Play deferred", e));
+    } else if (!shouldPlay && audioRef.current) {
+      audioRef.current.pause();
     }
   }, [shouldPlay]);
 
@@ -76,7 +85,6 @@ const BackgroundMusic = forwardRef<BackgroundMusicRef, BackgroundMusicProps>(({ 
       filterRef.current.frequency.setTargetAtTime(200, now, 0.4);
     } else {
       const targetGain = shouldPlay ? 0.35 : 0;
-      // Frequency response based on progress
       const targetFreq = 400 + (Math.pow(progress, 2) * 12000);
       gainRef.current.gain.setTargetAtTime(targetGain, now, 2.0);
       filterRef.current.frequency.setTargetAtTime(targetFreq, now, 1.5);

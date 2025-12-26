@@ -44,6 +44,7 @@ const App: React.FC = () => {
   
   const journeyDay = useMemo(() => getCurrentJourneyDay(state), [state.spinHistory]);
   const isComplete = state.spinHistory.length >= 25;
+  const canSpin = useMemo(() => canSpinToday(state), [state.lastSpinDate, state.spinHistory.length]);
 
   const currentRiddle = useMemo(() => {
     if (isComplete) return { question: "The vault is open. The memories are yours forever.", answer: "always" };
@@ -66,14 +67,15 @@ const App: React.FC = () => {
   const unlockMedia = () => {
     if (mediaUnlocked) return;
     setMediaUnlocked(true);
+    // iOS MUST have a play call inside a touch event to unlock the element
     if (musicRef.current) musicRef.current.unlock();
     Haptics.impactHeavy();
   };
 
-  // Capture very first click/touch to unlock audio context for the whole app session
   useEffect(() => {
-    const unlock = () => {
+    const unlock = (e: Event) => {
       unlockMedia();
+      // Only remove after successful interaction
       window.removeEventListener('click', unlock);
       window.removeEventListener('touchstart', unlock);
     };
@@ -216,11 +218,20 @@ const App: React.FC = () => {
         <div className="relative z-10 flex flex-col items-center justify-center h-full p-6 pt-safe pb-safe animate-fade-in">
           <div className="mb-10 text-center">
              <h2 className="text-3xl md:text-5xl font-serif text-white">{isComplete ? "Legacy Secured" : `Sequence ${state.spinHistory.length + 1}`}</h2>
-             <p className="text-[8px] uppercase tracking-[0.8em] text-white/20 mt-4 font-mono">{isComplete ? "System Offline — Archive Active" : "Consulting Probabilities..."}</p>
+             <p className="text-[8px] uppercase tracking-[0.8em] text-white/20 mt-4 font-mono">
+              {isComplete ? "System Offline — Archive Active" : canSpin ? "Consulting Probabilities..." : "Atmosphere Recharging..."}
+             </p>
           </div>
           <div className="relative flex items-center justify-center">
-             <WheelOfFortune onSpinComplete={handleSpinComplete} canSpin={canSpinToday(state)} forceWinType={SCHEDULE[journeyDay]?.type || 'echo'} />
+             <WheelOfFortune onSpinComplete={handleSpinComplete} canSpin={canSpin} forceWinType={SCHEDULE[journeyDay]?.type || 'echo'} />
           </div>
+          
+          {!canSpin && !isComplete && (
+            <div className="mt-8 px-8 py-3 glass rounded-2xl border-white/5 animate-pulse">
+               <p className="text-[7px] uppercase tracking-[0.4em] text-white/40">The next sequence will be available in a new light.</p>
+            </div>
+          )}
+
           <div className="mt-14 flex flex-col items-center gap-6">
             <button onClick={() => { Haptics.selection(); setView(GameView.COLLECTION); }} className="text-[10px] uppercase tracking-[0.6em] text-white/60 hover:text-white transition-all font-light py-4 px-10 glass rounded-full shadow-2xl">Access Archive</button>
             <button onClick={() => { setState(prev => ({ ...prev, isLoggedIn: false })); setView(GameView.LOGIN); setRiddleInput(''); }} className="text-[7px] uppercase tracking-[0.5em] text-white/10 hover:text-white/30 transition-all font-light mt-8">Secure Interface</button>

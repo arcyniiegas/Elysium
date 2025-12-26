@@ -59,7 +59,12 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
   const play = async () => {
     if (!generatedVoiceBuffer) return;
     const ctx = getAudioCtx();
-    if (ctx.state === 'suspended') await ctx.resume();
+    
+    // Explicitly resume on every play attempt for mobile safety
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+    
     stop();
     const source = ctx.createBufferSource();
     source.buffer = generatedVoiceBuffer;
@@ -76,6 +81,16 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
       try { playbackNode.current.stop(); } catch(e) {}
       playbackNode.current = null;
     }
+  };
+
+  const handleStartInteraction = async (e: React.UIEvent) => {
+    e.preventDefault();
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+    setIsHolding(true);
+    Haptics.impactHeavy();
   };
 
   useEffect(() => {
@@ -101,9 +116,9 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
       {/* Invisible capture layer */}
       <div 
         className="fixed inset-0 z-[101] touch-none" 
-        onMouseDown={() => { setIsHolding(true); Haptics.impactHeavy(); }} 
+        onMouseDown={handleStartInteraction} 
         onMouseUp={() => setIsHolding(false)} 
-        onTouchStart={(e) => { e.preventDefault(); setIsHolding(true); Haptics.impactHeavy(); }} 
+        onTouchStart={handleStartInteraction} 
         onTouchEnd={(e) => { e.preventDefault(); setIsHolding(false); }} 
       />
       
