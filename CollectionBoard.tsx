@@ -1,6 +1,6 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { MUSEUMS, REASONS_WHY_I_LOVE_YOU } from './constants';
+import { Haptics } from './haptics';
 
 interface CollectionBoardProps {
   spinHistory: string[];
@@ -11,6 +11,51 @@ interface CollectionBoardProps {
 }
 
 const CollectionBoard: React.FC<CollectionBoardProps> = ({ spinHistory, scheduledDates, voiceRecordings, onBack, onItemClick }) => {
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
+  const [isTesting, setIsTesting] = useState(false);
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      setNotifPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestNotifications = async () => {
+    if (!('Notification' in window)) {
+      alert("This device is shielded from external frequencies (Notifications not supported).");
+      return;
+    }
+    
+    Haptics.selection();
+    const permission = await Notification.requestPermission();
+    setNotifPermission(permission);
+    
+    if (permission === 'granted') {
+      Haptics.notificationSuccess();
+    }
+  };
+
+  const triggerTestNotification = () => {
+    if (notifPermission !== 'granted') return;
+    setIsTesting(true);
+    Haptics.impactHeavy();
+    
+    // Simulate a delayed "random" push via the service worker registration
+    setTimeout(() => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          // Fix: Cast options to any to satisfy TypeScript when using the 'vibrate' property in NotificationOptions
+          registration.showNotification('Elysium', {
+            body: 'Nepamiršk, kad myliu tave.',
+            icon: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?q=80&w=192&h=192&auto=format&fit=crop',
+            vibrate: [200, 100, 200]
+          } as any);
+          setIsTesting(false);
+        });
+      }
+    }, 4000);
+  };
+
   const vaultGrid = useMemo(() => {
     const grid = new Array(25).fill(null);
     spinHistory.forEach((entry, idx) => {
@@ -29,21 +74,98 @@ const CollectionBoard: React.FC<CollectionBoardProps> = ({ spinHistory, schedule
   }, [spinHistory, voiceRecordings]);
 
   return (
-    <div className="relative z-10 w-full min-h-screen bg-black pt-safe">
-      <header className="sticky top-0 z-[100] bg-black/80 backdrop-blur-3xl p-6 flex justify-between items-center">
-        <h2 className="text-[10px] uppercase tracking-widest text-white/50">Memory Vault</h2>
-        <button onClick={onBack} className="px-6 py-2 glass rounded-full text-[8px] uppercase tracking-widest text-white">Back</button>
+    <div className="relative z-10 w-full min-h-screen bg-black pt-safe pb-24 overflow-x-hidden">
+      <header className="sticky top-0 z-[100] bg-black/90 backdrop-blur-3xl p-6 flex justify-between items-center border-b border-white/5">
+        <h2 className="text-[10px] uppercase tracking-[0.8em] text-white/30 font-bold">Memory Vault</h2>
+        <button onClick={onBack} className="px-6 py-2 glass rounded-full text-[8px] uppercase tracking-widest text-white active:scale-95 transition-all">Return</button>
       </header>
-      <div className="p-6 grid grid-cols-2 gap-4">
-        {vaultGrid.map((item, idx) => (
-          <div key={idx} onClick={() => item && onItemClick(item.type, item.itemId)} className={`rounded-3xl border border-white/10 flex flex-col items-center justify-center p-4 min-h-[140px] ${!item ? 'opacity-10' : 'cursor-pointer hover:bg-white/5'}`}>
-            {!item ? <span className="text-[8px] font-mono">SEC_{idx + 1}</span> : (
-              item.type === 'win' ? <img src={item.image} className="w-full h-full object-cover rounded-xl" /> : 
-              <p className="text-[10px] italic text-center text-white/70">"{item.content.substring(0, 40)}..."</p>
-            )}
+
+      <div className="p-6 space-y-8">
+        {/* Frequency Sync Card */}
+        <section className="p-8 glass rounded-[40px] border-white/10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+              <path d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
+              <path d="M12 7v5l3 3" />
+            </svg>
           </div>
-        ))}
+
+          <div className="relative z-10 flex flex-col items-center text-center">
+            <div className="mb-6">
+              <div className={`w-2 h-2 rounded-full mb-4 mx-auto ${notifPermission === 'granted' ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/20'}`}></div>
+              <h3 className="text-[9px] uppercase tracking-[0.6em] text-white/40 mb-2">Frequency Synchronization</h3>
+              <p className="text-xl font-serif italic text-white/90">"Nepamiršk, kad myliu tave."</p>
+            </div>
+
+            <p className="text-[10px] text-white/40 leading-relaxed mb-8 max-w-[240px]">
+              Enable a daily resonance signal. The heavens will whisper to you at unpredictable moments.
+            </p>
+
+            <div className="flex flex-col gap-3 w-full max-w-[200px]">
+              {notifPermission !== 'granted' ? (
+                <button 
+                  onClick={requestNotifications}
+                  className="w-full py-4 bg-white text-black text-[9px] uppercase tracking-widest font-bold rounded-full active:scale-95 transition-all"
+                >
+                  Establish Link
+                </button>
+              ) : (
+                <>
+                  <div className="py-3 px-6 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[8px] uppercase tracking-widest">
+                    Link Active
+                  </div>
+                  <button 
+                    onClick={triggerTestNotification}
+                    disabled={isTesting}
+                    className="text-[8px] uppercase tracking-[0.4em] text-white/30 hover:text-white transition-all py-2"
+                  >
+                    {isTesting ? 'Simulating Signal...' : 'Test Resonance'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Background Pulse Animation */}
+          <div className="absolute bottom-0 left-0 right-0 h-1 overflow-hidden opacity-20">
+            <div className="w-full h-full bg-white/10 animate-pulse"></div>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-2 gap-4">
+          {vaultGrid.map((item, idx) => (
+            <div 
+              key={idx} 
+              onClick={() => item && onItemClick(item.type, item.itemId)} 
+              className={`relative rounded-[32px] border border-white/5 flex flex-col items-center justify-center overflow-hidden min-h-[160px] transition-all duration-700 ${!item ? 'bg-white/[0.01] opacity-10' : 'cursor-pointer hover:bg-white/5 bg-white/[0.02]'}`}
+            >
+              {!item ? (
+                <span className="text-[7px] font-mono text-white/40 tracking-widest uppercase">Locked</span>
+              ) : (
+                item.type === 'win' ? (
+                  <div className="absolute inset-0 w-full h-full group">
+                    <img src={item.image} className="w-full h-full object-cover grayscale brightness-[0.3] group-hover:brightness-50 transition-all duration-1000" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex items-end p-5">
+                       <span className="text-[8px] uppercase tracking-widest text-white/60 font-medium">{item.title}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 flex flex-col items-center gap-4">
+                    <div className={`w-1 h-1 rounded-full ${item.hasVoice ? 'bg-white shadow-[0_0_8px_white]' : 'bg-white/10'}`}></div>
+                    <p className="text-[10px] italic text-center text-white/40 leading-relaxed font-serif">
+                      "{item.content.substring(0, 45)}..."
+                    </p>
+                  </div>
+                )
+              )}
+            </div>
+          ))}
+        </div>
       </div>
+
+      <footer className="mt-12 mb-8 text-center px-12">
+        <p className="text-[7px] uppercase tracking-[1em] text-white/10">Archive Integrity Confirmed</p>
+      </footer>
     </div>
   );
 };

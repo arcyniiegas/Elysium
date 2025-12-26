@@ -16,7 +16,8 @@ export interface UserState {
   collectedReasons: number[]; 
   spinHistory: string[]; 
   scheduledDates: Record<number, string>;
-  voiceRecordings: Record<number, string>; // Maps reason ID to Base64 audio string
+  voiceRecordings: Record<number, string>;
+  notificationsEnabled: boolean;
 }
 
 export enum GameView {

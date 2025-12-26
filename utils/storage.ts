@@ -3,6 +3,7 @@ import { UserState } from '../types';
 
 const STORAGE_KEY = 'elysium_v2_journey';
 
+// Fix: Added missing 'notificationsEnabled' property required by UserState interface
 const INITIAL_STATE: UserState = {
   isLoggedIn: false,
   hasSeenIntro: false,
@@ -12,7 +13,8 @@ const INITIAL_STATE: UserState = {
   collectedReasons: [],
   spinHistory: [],
   scheduledDates: {},
-  voiceRecordings: {}
+  voiceRecordings: {},
+  notificationsEnabled: false
 };
 
 export const loadState = (): UserState => {

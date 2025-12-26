@@ -12,7 +12,8 @@ const INITIAL_STATE: UserState = {
   collectedReasons: [],
   spinHistory: [],
   scheduledDates: {},
-  voiceRecordings: {}
+  voiceRecordings: {},
+  notificationsEnabled: false
 };
 
 export const loadState = (): UserState => {
@@ -36,19 +37,13 @@ export const getCurrentJourneyDay = (state: UserState): number => {
 };
 
 export const canSpinToday = (state: UserState): boolean => {
-  // Total limit check (Vault capacity)
   if (state.spinHistory.length >= 25) return false;
-  
-  // Special Rule: Allow two spins on the very first interaction (first day)
   if (state.spinHistory.length < 2) return true;
-  
-  // Daily limit check for subsequent days
   if (!state.lastSpinDate) return true;
   
   const lastSpin = new Date(state.lastSpinDate);
   const now = new Date();
   
-  // Compare local calendar dates to restrict to one rotation per day
   const isSameDay = 
     lastSpin.getDate() === now.getDate() &&
     lastSpin.getMonth() === now.getMonth() &&

@@ -58,7 +58,7 @@ const WheelOfFortune: React.FC<WheelProps> = ({ onSpinComplete, canSpin, forceWi
     if (isSpinning || !canSpin) return;
     setIsSpinning(true);
     Haptics.impactHeavy();
-    const landingAngle = (forceWinType === 'relic' ? 18 : 54); // Just basic logic for example
+    const landingAngle = (forceWinType === 'relic' ? 18 : 54); 
     const targetRotation = rotationRef.current + (360 * 10) + landingAngle;
     startSpinAnimation(targetRotation);
   };
@@ -70,9 +70,9 @@ const WheelOfFortune: React.FC<WheelProps> = ({ onSpinComplete, canSpin, forceWi
   return (
     <div className="flex flex-col items-center relative">
       <div className={`fixed inset-0 z-40 pointer-events-none transition-opacity duration-[3000ms] ${isSpinning ? 'opacity-100' : 'opacity-0'}`} style={{ background: 'radial-gradient(circle, transparent 10%, rgba(0,0,0,0.95) 100%)' }}></div>
-      <div className={`relative w-64 h-64 md:w-[420px] md:h-[420px] mb-10 z-50 transition-all duration-[2000ms] ${isSpinning ? 'scale-105' : 'scale-100'}`}>
+      <div className={`relative w-60 h-60 md:w-[400px] md:h-[400px] mb-6 z-50 transition-all duration-[2000ms] ${isSpinning ? 'scale-105' : 'scale-100'}`}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[10%] z-[100]" style={{ transform: `translateX(-50%) rotate(${isFlicking ? '-15deg' : '0deg'})` }}>
-          <svg width="24" height="44" viewBox="0 0 24 48" fill="none"><path d="M12 48L24 10C24 10 18 0 12 0C6 0 0 10 0 10L12 48Z" fill="white" /></svg>
+          <svg width="22" height="40" viewBox="0 0 24 48" fill="none"><path d="M12 48L24 10C24 10 18 0 12 0C6 0 0 10 0 10L12 48Z" fill="white" /></svg>
         </div>
         <svg viewBox="0 0 100 100" className="w-full h-full" style={{ transform: `rotate(${-visualRotation}deg)` }}>
           {[...Array(10)].map((_, i) => (
@@ -81,7 +81,7 @@ const WheelOfFortune: React.FC<WheelProps> = ({ onSpinComplete, canSpin, forceWi
           <circle cx="50" cy="50" r="4" fill="#000" stroke="white" strokeWidth="0.5" />
         </svg>
       </div>
-      <button onClick={spin} disabled={isSpinning || !canSpin} className="relative z-50 px-12 py-4 glass rounded-full text-[9px] uppercase tracking-[0.6em] text-white">
+      <button onClick={spin} disabled={isSpinning || !canSpin} className="relative z-50 px-10 py-3.5 glass rounded-full text-[9px] uppercase tracking-[0.6em] text-white">
         {isSpinning ? 'Consulting the Spirits' : 'Test Your Fortune'}
       </button>
     </div>

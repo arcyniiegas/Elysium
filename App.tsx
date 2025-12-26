@@ -217,9 +217,9 @@ const App: React.FC = () => {
 
       {view === GameView.WHEEL && (
         <div className="relative z-10 flex flex-col items-center justify-center h-full p-6 pt-safe pb-safe animate-fade-in">
-          <div className="mb-10 text-center flex flex-col items-center">
+          <div className="mb-4 text-center flex flex-col items-center">
              <h2 className="text-3xl md:text-5xl font-serif text-white">{isComplete ? "Legacy Secured" : `Sequence ${state.spinHistory.length + 1}`}</h2>
-             <p className="text-[8px] uppercase tracking-[0.8em] text-white/20 mt-4 font-mono">
+             <p className="text-[8px] uppercase tracking-[0.8em] text-white/20 mt-2 font-mono">
               {isComplete ? "System Offline — Archive Active" : canSpin ? "Consulting Probabilities..." : "Atmosphere Recharging..."}
              </p>
           </div>
@@ -229,16 +229,16 @@ const App: React.FC = () => {
           </div>
           
           {!canSpin && !isComplete && (
-            <div className="mt-12 flex flex-col items-center animate-fade-in w-full">
-              <div className="h-px w-12 bg-white/10 mb-6"></div>
-              <p className="text-[8px] uppercase tracking-[0.4em] text-white/50 text-center max-w-[280px] leading-loose px-4">
+            <div className="mt-4 flex flex-col items-center animate-fade-in w-full">
+              <div className="h-px w-10 bg-white/10 mb-3"></div>
+              <p className="text-[8px] uppercase tracking-[0.4em] text-white/50 text-center max-w-[280px] leading-relaxed px-4">
                 The next sequence will be available <br/> when a new light emerges tomorrow.
               </p>
             </div>
           )}
 
-          <div className="mt-14 flex flex-col items-center gap-6">
-            <button onClick={() => { Haptics.selection(); setView(GameView.COLLECTION); }} className="text-[10px] uppercase tracking-[0.6em] text-white/60 hover:text-white transition-all font-light py-4 px-10 glass rounded-full shadow-2xl">Access Archive</button>
+          <div className="mt-6 flex flex-col items-center gap-4">
+            <button onClick={() => { Haptics.selection(); setView(GameView.COLLECTION); }} className="text-[10px] uppercase tracking-[0.6em] text-white/60 hover:text-white transition-all font-light py-3.5 px-10 glass rounded-full shadow-2xl">Access Archive</button>
           </div>
         </div>
       )}
