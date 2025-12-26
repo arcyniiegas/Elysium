@@ -36,7 +36,7 @@ export const EXTERNAL_VOICE_URLS: Record<number, string> = {
 export const MUSEUMS: Prize[] = [
   {
     id: 1,
-    name: "Inhotim",
+    name: "Instituto Inhotim",
     description: "A place where art breathes among the trees. Our first stop on this journey into beauty.",
     image: "https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?auto=format&fit=crop&q=80&w=1000",
     ticketUrl: "https://www.inhotim.org.br/" 

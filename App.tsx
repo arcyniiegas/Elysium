@@ -229,9 +229,9 @@ const App: React.FC = () => {
           </div>
           
           {!canSpin && !isComplete && (
-            <div className="mt-12 flex flex-col items-center animate-fade-in">
+            <div className="mt-12 flex flex-col items-center animate-fade-in w-full">
               <div className="h-px w-12 bg-white/10 mb-6"></div>
-              <p className="text-[7px] uppercase tracking-[0.5em] text-white/30 text-center max-w-[240px] leading-loose">
+              <p className="text-[8px] uppercase tracking-[0.4em] text-white/50 text-center max-w-[280px] leading-loose px-4">
                 The next sequence will be available <br/> when a new light emerges tomorrow.
               </p>
             </div>
@@ -239,7 +239,6 @@ const App: React.FC = () => {
 
           <div className="mt-14 flex flex-col items-center gap-6">
             <button onClick={() => { Haptics.selection(); setView(GameView.COLLECTION); }} className="text-[10px] uppercase tracking-[0.6em] text-white/60 hover:text-white transition-all font-light py-4 px-10 glass rounded-full shadow-2xl">Access Archive</button>
-            <button onClick={() => { setState(prev => ({ ...prev, isLoggedIn: false })); setView(GameView.LOGIN); setRiddleInput(''); }} className="text-[7px] uppercase tracking-[0.5em] text-white/10 hover:text-white/30 transition-all font-light mt-8">Secure Interface</button>
           </div>
         </div>
       )}
@@ -278,7 +277,7 @@ const App: React.FC = () => {
              )}
              <p className="text-[13px] text-white/50 mb-10 leading-relaxed font-light italic px-4">"{currentWin.description}"</p>
              <div className="flex flex-col gap-4">
-               <button onClick={() => { Haptics.selection(); setIsScheduling(true); }} className="w-full bg-white text-black text-[10px] uppercase tracking-[0.6em] py-4 rounded-full font-bold active:scale-95 transition-all">{state.scheduledDates[currentWin.id] ? "Reschedule" : "Confirm Attendance"}</button>
+               <button onClick={() => { Haptics.selection(); setIsScheduling(true); }} className="w-full bg-white text-black text-[10px] uppercase tracking-[0.6em] py-4 rounded-full font-bold active:scale-95 transition-all">{state.scheduledDates[currentWin.id] ? "Reschedule" : "Plan Trip"}</button>
                <button onClick={() => { Haptics.selection(); setView(isFromArchive ? GameView.COLLECTION : GameView.WHEEL); }} className="text-[9px] uppercase tracking-[0.5em] text-white/20 hover:text-white transition-all py-2">Return</button>
              </div>
           </div>

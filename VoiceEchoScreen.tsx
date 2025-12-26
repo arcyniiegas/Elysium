@@ -24,7 +24,7 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
 
   const getAudioCtx = () => {
     if (!audioCtx.current) {
-      audioCtx.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioCtx.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
     }
     return audioCtx.current;
   };
@@ -60,7 +60,6 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
     if (!generatedVoiceBuffer) return;
     const ctx = getAudioCtx();
     
-    // Explicitly resume on every play attempt for mobile safety
     if (ctx.state === 'suspended') {
       await ctx.resume();
     }
@@ -83,14 +82,20 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
     }
   };
 
-  const handleStartInteraction = async (e: React.UIEvent) => {
-    e.preventDefault();
+  const handleStartInteraction = async (e: React.MouseEvent | React.TouchEvent) => {
+    // Crucial for mobile: prevent default to avoid scrolling/gestures and resume audio context
+    if (e.cancelable) e.preventDefault();
     const ctx = getAudioCtx();
     if (ctx.state === 'suspended') {
       await ctx.resume();
     }
     setIsHolding(true);
     Haptics.impactHeavy();
+  };
+
+  const handleEndInteraction = (e: React.MouseEvent | React.TouchEvent) => {
+    if (e.cancelable) e.preventDefault();
+    setIsHolding(false);
   };
 
   useEffect(() => {
@@ -112,43 +117,56 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
   }, [isHolding, generatedVoiceBuffer]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-8 text-center bg-black/95 transition-opacity duration-1000">
-      {/* Invisible capture layer */}
+    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-8 text-center bg-black/98 transition-opacity duration-1000">
+      {/* Invisible capture layer with improved touch handling */}
       <div 
-        className="fixed inset-0 z-[101] touch-none" 
+        className="fixed inset-0 z-[101] touch-none select-none" 
         onMouseDown={handleStartInteraction} 
-        onMouseUp={() => setIsHolding(false)} 
+        onMouseUp={handleEndInteraction}
+        onMouseLeave={handleEndInteraction}
         onTouchStart={handleStartInteraction} 
-        onTouchEnd={(e) => { e.preventDefault(); setIsHolding(false); }} 
+        onTouchEnd={handleEndInteraction}
+        onTouchCancel={handleEndInteraction}
       />
       
-      <div className="relative z-[102] w-full max-w-sm pointer-events-none">
-        <h4 className="text-[8px] uppercase tracking-[1em] text-white/20 mb-16 animate-pulse">
+      <div className="relative z-[102] w-full max-w-sm pointer-events-none mb-12">
+        <h4 className="text-[8px] uppercase tracking-[1em] text-white/40 mb-16 animate-pulse">
           {loadStatus === 'loading' ? 'Deciphering Resonance...' : 
            loadStatus === 'ready' ? 'Link Established' : 'Resonance Decoupled'}
         </h4>
-        <div className="flex flex-wrap justify-center gap-x-2 gap-y-3 min-h-[140px] items-center">
+        <div className="flex flex-wrap justify-center gap-x-2 gap-y-3 min-h-[160px] items-center">
           {words.map((word, i) => (
             <span key={i} className={`text-xl md:text-2xl font-serif transition-all duration-1000 ${i < visibleWordsCount ? 'text-white opacity-100 blur-0 translate-y-0' : 'text-white/0 opacity-0 blur-lg translate-y-4'}`}>{word}</span>
           ))}
         </div>
       </div>
 
-      <div className="mt-auto relative z-[102] flex flex-col items-center gap-10 pointer-events-none pb-12">
-        <div className={`w-24 h-24 rounded-full border border-white/5 flex items-center justify-center transition-all duration-500 ${isHolding ? 'scale-110 border-white/20 bg-white/[0.02]' : 'scale-100'}`}>
-          <div className={`w-2 h-2 rounded-full bg-white transition-all duration-700 ${isHolding ? 'opacity-100 scale-125 shadow-[0_0_15px_white]' : 'opacity-10 scale-50'}`} />
+      <div className="mt-auto relative z-[102] flex flex-col items-center gap-12 pointer-events-none pb-20 w-full">
+        <div className={`w-28 h-28 rounded-full border border-white/30 flex items-center justify-center transition-all duration-500 ${isHolding ? 'scale-110 border-white/60 bg-white/[0.08]' : 'scale-100'}`}>
+          <div className={`w-4 h-4 rounded-full bg-white transition-all duration-700 ${isHolding ? 'opacity-100 scale-125 shadow-[0_0_30px_white]' : 'opacity-60 scale-75'}`} />
         </div>
         
-        <p className={`text-[8px] uppercase tracking-[0.5em] text-white/30 transition-opacity duration-500 ${isHolding ? 'opacity-0' : 'opacity-100'}`}>
+        <p className={`text-[10px] uppercase tracking-[0.6em] text-white/80 transition-opacity duration-500 font-medium ${isHolding ? 'opacity-0' : 'opacity-100 animate-pulse'}`}>
           Hold pulse to hear resonance
         </p>
 
-        <button 
-          onClick={(e) => { e.stopPropagation(); onClose(); }} 
-          className={`pointer-events-auto px-12 py-4 glass rounded-full text-[9px] uppercase tracking-widest text-white transition-all duration-1000 ${visibleWordsCount >= words.length ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-        >
-          Acknowledge
-        </button>
+        <div className="flex flex-col gap-6 w-full max-w-[200px] pointer-events-auto">
+          {visibleWordsCount >= words.length && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onClose(); }} 
+              className="w-full px-6 py-4 glass rounded-full text-[9px] uppercase tracking-widest text-white border-white/20 shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-95 transition-all"
+            >
+              Acknowledge
+            </button>
+          )}
+          
+          <button 
+            onClick={(e) => { e.stopPropagation(); onClose(); }} 
+            className="w-full px-6 py-3 text-[8px] uppercase tracking-[0.5em] text-white/30 hover:text-white transition-all active:scale-95"
+          >
+            Quit Echo
+          </button>
+        </div>
       </div>
     </div>
   );
