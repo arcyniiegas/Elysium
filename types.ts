@@ -17,7 +17,6 @@ export interface UserState {
   spinHistory: string[]; 
   scheduledDates: Record<number, string>;
   voiceRecordings: Record<number, string>;
-  notificationsEnabled: boolean;
 }
 
 export enum GameView {
