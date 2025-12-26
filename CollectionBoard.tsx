@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { MUSEUMS, REASONS_WHY_I_LOVE_YOU } from './constants';
 import { Haptics } from './haptics';
@@ -13,47 +14,75 @@ interface CollectionBoardProps {
 const CollectionBoard: React.FC<CollectionBoardProps> = ({ spinHistory, scheduledDates, voiceRecordings, onBack, onItemClick }) => {
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
   const [isTesting, setIsTesting] = useState(false);
+  const [swStatus, setSwStatus] = useState<'checking' | 'active' | 'missing'>('checking');
 
   useEffect(() => {
     if ('Notification' in window) {
       setNotifPermission(Notification.permission);
     }
+    
+    // Check if Service Worker is actually ready
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(() => setSwStatus('active')).catch(() => setSwStatus('missing'));
+    } else {
+      setSwStatus('missing');
+    }
   }, []);
 
   const requestNotifications = async () => {
     if (!('Notification' in window)) {
-      alert("This device is shielded from external frequencies (Notifications not supported).");
+      alert("This device is shielded from external frequencies. (Browser doesn't support Notifications)");
+      return;
+    }
+
+    if (swStatus !== 'active') {
+      alert("Resonance Engine is still warming up. Please wait a moment or restart the app.");
       return;
     }
     
     Haptics.selection();
-    const permission = await Notification.requestPermission();
-    setNotifPermission(permission);
-    
-    if (permission === 'granted') {
-      Haptics.notificationSuccess();
+    try {
+      const permission = await Notification.requestPermission();
+      setNotifPermission(permission);
+      if (permission === 'granted') {
+        Haptics.notificationSuccess();
+      } else if (permission === 'denied') {
+        alert("Link Blocked. Please enable notifications for Elysium in your iPhone Settings > Notifications.");
+      }
+    } catch (e) {
+      console.error("Permission error", e);
     }
   };
 
-  const triggerTestNotification = () => {
-    if (notifPermission !== 'granted') return;
+  const triggerTestNotification = (delay: boolean = true) => {
+    if (notifPermission !== 'granted') {
+      alert("You must Establish Link first.");
+      return;
+    }
+    
     setIsTesting(true);
     Haptics.impactHeavy();
     
-    // Simulate a delayed "random" push via the service worker registration
-    setTimeout(() => {
+    const send = () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(registration => {
-          // Fix: Cast options to any to satisfy TypeScript when using the 'vibrate' property in NotificationOptions
           registration.showNotification('Elysium', {
             body: 'Nepamiršk, kad myliu tave.',
             icon: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?q=80&w=192&h=192&auto=format&fit=crop',
-            vibrate: [200, 100, 200]
+            vibrate: [200, 100, 200],
+            tag: 'test'
           } as any);
           setIsTesting(false);
         });
       }
-    }, 4000);
+    };
+
+    if (delay) {
+      // 5 second delay to let the user lock the screen
+      setTimeout(send, 5000);
+    } else {
+      send();
+    }
   };
 
   const vaultGrid = useMemo(() => {
@@ -81,54 +110,61 @@ const CollectionBoard: React.FC<CollectionBoardProps> = ({ spinHistory, schedule
       </header>
 
       <div className="p-6 space-y-8">
-        {/* Frequency Sync Card */}
-        <section className="p-8 glass rounded-[40px] border-white/10 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-              <path d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
-              <path d="M12 7v5l3 3" />
-            </svg>
-          </div>
-
+        {/* Diagnostic Frequency Sync Card */}
+        <section className="p-8 glass rounded-[40px] border-white/10 relative overflow-hidden">
           <div className="relative z-10 flex flex-col items-center text-center">
             <div className="mb-6">
-              <div className={`w-2 h-2 rounded-full mb-4 mx-auto ${notifPermission === 'granted' ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white/20'}`}></div>
+              <div className="flex items-center gap-2 mb-4 justify-center">
+                <div className={`w-1.5 h-1.5 rounded-full ${swStatus === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_emerald]' : 'bg-red-500 shadow-[0_0_8px_red]'}`}></div>
+                <span className="text-[7px] uppercase tracking-widest text-white/20">
+                  {swStatus === 'active' ? 'Engine Online' : 'Engine Offline'}
+                </span>
+              </div>
               <h3 className="text-[9px] uppercase tracking-[0.6em] text-white/40 mb-2">Frequency Synchronization</h3>
               <p className="text-xl font-serif italic text-white/90">"Nepamiršk, kad myliu tave."</p>
             </div>
 
             <p className="text-[10px] text-white/40 leading-relaxed mb-8 max-w-[240px]">
-              Enable a daily resonance signal. The heavens will whisper to you at unpredictable moments.
+              {notifPermission === 'denied' 
+                ? "Resonance Blocked. Enable notifications in your iPhone system settings to proceed." 
+                : "The heavens will whisper to you at unpredictable moments."}
             </p>
 
             <div className="flex flex-col gap-3 w-full max-w-[200px]">
               {notifPermission !== 'granted' ? (
                 <button 
                   onClick={requestNotifications}
-                  className="w-full py-4 bg-white text-black text-[9px] uppercase tracking-widest font-bold rounded-full active:scale-95 transition-all"
+                  className="w-full py-4 bg-white text-black text-[9px] uppercase tracking-widest font-bold rounded-full active:scale-95 transition-all shadow-xl"
                 >
                   Establish Link
                 </button>
               ) : (
                 <>
-                  <div className="py-3 px-6 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[8px] uppercase tracking-widest">
+                  <div className="py-3 px-6 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[8px] uppercase tracking-widest flex items-center justify-center gap-2">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
                     Link Active
                   </div>
-                  <button 
-                    onClick={triggerTestNotification}
-                    disabled={isTesting}
-                    className="text-[8px] uppercase tracking-[0.4em] text-white/30 hover:text-white transition-all py-2"
-                  >
-                    {isTesting ? 'Simulating Signal...' : 'Test Resonance'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => triggerTestNotification(true)}
+                      disabled={isTesting}
+                      className="flex-1 text-[8px] uppercase tracking-[0.4em] text-white/30 hover:text-white transition-all py-3 glass rounded-xl border-white/5"
+                    >
+                      {isTesting ? 'Locked...' : 'Test (Lock Screen)'}
+                    </button>
+                    <button 
+                      onClick={() => triggerTestNotification(false)}
+                      className="flex-1 text-[8px] uppercase tracking-[0.4em] text-white/30 hover:text-white transition-all py-3 glass rounded-xl border-white/5"
+                    >
+                      Instant
+                    </button>
+                  </div>
+                  <p className="text-[7px] text-white/20 mt-2 uppercase tracking-widest">Wait 5s after clicking Test</p>
                 </>
               )}
             </div>
-          </div>
-
-          {/* Background Pulse Animation */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 overflow-hidden opacity-20">
-            <div className="w-full h-full bg-white/10 animate-pulse"></div>
           </div>
         </section>
 
@@ -162,10 +198,6 @@ const CollectionBoard: React.FC<CollectionBoardProps> = ({ spinHistory, schedule
           ))}
         </div>
       </div>
-
-      <footer className="mt-12 mb-8 text-center px-12">
-        <p className="text-[7px] uppercase tracking-[1em] text-white/10">Archive Integrity Confirmed</p>
-      </footer>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'elysium-v6';
+const CACHE_NAME = 'elysium-v7';
 const ASSETS = [
   '/',
   '/index.html',
@@ -8,11 +8,13 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  console.log('Elysium SW: Installing...');
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('Elysium SW: Activated.');
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
   );
@@ -25,8 +27,9 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push Notification Listener with custom Lithuanian message fallback
+// The core listener that catches the "Nepamiršk" signal
 self.addEventListener('push', (event) => {
+  console.log('Elysium SW: Received Push Signal.');
   let data = { 
     title: 'Elysium', 
     body: 'Nepamiršk, kad myliu tave.' 
@@ -49,6 +52,7 @@ self.addEventListener('push', (event) => {
     vibrate: [200, 100, 200],
     tag: 'daily-reminder',
     renotify: true,
+    requireInteraction: true,
     data: { url: '/' }
   };
 
