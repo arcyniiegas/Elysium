@@ -192,7 +192,7 @@ const App: React.FC = () => {
                   autoComplete="off" 
                   value={riddleInput} 
                   onChange={(e) => { setRiddleInput(e.target.value); }} 
-                  className="w-full bg-transparent text-center text-4xl tracking-[0.6em] focus:outline-none font-light text-white transition-all placeholder:opacity-0" 
+                  className="w-full bg-transparent text-center text-2xl tracking-[0.6em] focus:outline-none font-light text-white transition-all placeholder:opacity-0" 
                   style={{ WebkitTextSecurity: 'disc' } as any} 
                 />
                 <div className="absolute -bottom-2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
