@@ -17,6 +17,7 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
   const [visibleWordsCount, setVisibleWordsCount] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
   const [generatedVoiceBuffer, setGeneratedVoiceBuffer] = useState<AudioBuffer | null>(null);
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const audioCtx = useRef<AudioContext | null>(null);
   const playbackNode = useRef<AudioBufferSourceNode | null>(null);
   const words = useMemo(() => text.split(' '), [text]);
@@ -31,13 +32,26 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
   useEffect(() => {
     const loadAudio = async () => {
       const url = existingAudio || EXTERNAL_VOICE_URLS[id];
-      if (!url) return;
+      if (!url) {
+        setLoadStatus('error');
+        return;
+      }
       try {
         const ctx = getAudioCtx();
         const res = await fetch(url);
+        if (!res.ok) throw new Error("Stream unavailable");
         const arrayBuffer = await res.arrayBuffer();
-        ctx.decodeAudioData(arrayBuffer, (buffer) => setGeneratedVoiceBuffer(buffer));
-      } catch (e) { console.warn("Echo Audio Load Error:", e); }
+        ctx.decodeAudioData(arrayBuffer, (buffer) => {
+          setGeneratedVoiceBuffer(buffer);
+          setLoadStatus('ready');
+        }, (e) => {
+          console.error("Audio Decode Error:", e);
+          setLoadStatus('error');
+        });
+      } catch (e) { 
+        console.warn("Echo Audio Load Error:", e);
+        setLoadStatus('error');
+      }
     };
     loadAudio();
   }, [id, existingAudio]);
@@ -67,26 +81,60 @@ const VoiceEchoScreen: React.FC<VoiceEchoScreenProps> = ({ id, text, existingAud
   useEffect(() => {
     onHoldingChange(isHolding);
     if (isHolding) {
-      play();
+      if (generatedVoiceBuffer) play();
+      
       const interval = setInterval(() => {
         setVisibleWordsCount(prev => Math.min(prev + 1, words.length));
       }, 200);
-      return () => { clearInterval(interval); stop(); };
-    } else { stop(); }
+      
+      return () => { 
+        clearInterval(interval); 
+        stop(); 
+      };
+    } else { 
+      stop(); 
+    }
   }, [isHolding, generatedVoiceBuffer]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-8 text-center bg-black/95">
-      <div className="fixed inset-0 z-[101] touch-none" onTouchStart={() => setIsHolding(true)} onTouchEnd={() => setIsHolding(false)} onMouseDown={() => setIsHolding(true)} onMouseUp={() => setIsHolding(false)} />
+    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-8 text-center bg-black/95 transition-opacity duration-1000">
+      {/* Invisible capture layer */}
+      <div 
+        className="fixed inset-0 z-[101] touch-none" 
+        onMouseDown={() => { setIsHolding(true); Haptics.impactHeavy(); }} 
+        onMouseUp={() => setIsHolding(false)} 
+        onTouchStart={(e) => { e.preventDefault(); setIsHolding(true); Haptics.impactHeavy(); }} 
+        onTouchEnd={(e) => { e.preventDefault(); setIsHolding(false); }} 
+      />
+      
       <div className="relative z-[102] w-full max-w-sm pointer-events-none">
-        <h4 className="text-[8px] uppercase tracking-[1em] text-white/20 mb-16">{generatedVoiceBuffer ? "Sync Online" : "Connecting..."}</h4>
-        <div className="flex flex-wrap justify-center gap-2">
+        <h4 className="text-[8px] uppercase tracking-[1em] text-white/20 mb-16 animate-pulse">
+          {loadStatus === 'loading' ? 'Deciphering Resonance...' : 
+           loadStatus === 'ready' ? 'Link Established' : 'Resonance Decoupled'}
+        </h4>
+        <div className="flex flex-wrap justify-center gap-x-2 gap-y-3 min-h-[140px] items-center">
           {words.map((word, i) => (
-            <span key={i} className={`text-xl font-serif transition-all duration-1000 ${i < visibleWordsCount ? 'text-white opacity-100' : 'text-white/0 opacity-0 blur-md'}`}>{word}</span>
+            <span key={i} className={`text-xl md:text-2xl font-serif transition-all duration-1000 ${i < visibleWordsCount ? 'text-white opacity-100 blur-0 translate-y-0' : 'text-white/0 opacity-0 blur-lg translate-y-4'}`}>{word}</span>
           ))}
         </div>
       </div>
-      <button onClick={onClose} className="mt-auto relative z-[102] px-12 py-4 glass rounded-full text-[9px] uppercase tracking-widest text-white">Return</button>
+
+      <div className="mt-auto relative z-[102] flex flex-col items-center gap-10 pointer-events-none pb-12">
+        <div className={`w-24 h-24 rounded-full border border-white/5 flex items-center justify-center transition-all duration-500 ${isHolding ? 'scale-110 border-white/20 bg-white/[0.02]' : 'scale-100'}`}>
+          <div className={`w-2 h-2 rounded-full bg-white transition-all duration-700 ${isHolding ? 'opacity-100 scale-125 shadow-[0_0_15px_white]' : 'opacity-10 scale-50'}`} />
+        </div>
+        
+        <p className={`text-[8px] uppercase tracking-[0.5em] text-white/30 transition-opacity duration-500 ${isHolding ? 'opacity-0' : 'opacity-100'}`}>
+          Hold pulse to hear resonance
+        </p>
+
+        <button 
+          onClick={(e) => { e.stopPropagation(); onClose(); }} 
+          className={`pointer-events-auto px-12 py-4 glass rounded-full text-[9px] uppercase tracking-widest text-white transition-all duration-1000 ${visibleWordsCount >= words.length ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        >
+          Acknowledge
+        </button>
+      </div>
     </div>
   );
 };

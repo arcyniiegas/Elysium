@@ -65,10 +65,25 @@ const App: React.FC = () => {
 
   const unlockMedia = () => {
     if (mediaUnlocked) return;
-    if (musicRef.current) musicRef.current.unlock();
     setMediaUnlocked(true);
+    if (musicRef.current) musicRef.current.unlock();
     Haptics.impactHeavy();
   };
+
+  // Capture very first click/touch to unlock audio context for the whole app session
+  useEffect(() => {
+    const unlock = () => {
+      unlockMedia();
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+    window.addEventListener('click', unlock);
+    window.addEventListener('touchstart', unlock);
+    return () => {
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+  }, [mediaUnlocked]);
 
   const handleRiddleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,7 +188,7 @@ const App: React.FC = () => {
                   inputMode="text" 
                   autoComplete="off" 
                   value={riddleInput} 
-                  onChange={(e) => { setRiddleInput(e.target.value); unlockMedia(); }} 
+                  onChange={(e) => { setRiddleInput(e.target.value); }} 
                   className="w-full bg-transparent text-center text-4xl tracking-[0.6em] focus:outline-none font-light text-white transition-all placeholder:opacity-0" 
                   style={{ WebkitTextSecurity: 'disc' } as any} 
                 />
@@ -192,7 +207,7 @@ const App: React.FC = () => {
               <p className="text-xl md:text-2xl font-serif italic leading-relaxed text-white/70">I built this world because I couldn't carry our future in just a thought.</p>
               <p className="text-[11px] font-light leading-relaxed text-white/40 tracking-[0.15em] max-w-[280px] mx-auto">Every spin, the heavens shift. They offer <span className="text-white/60">Relics</span> of where we go and <span className="text-white/60">Echoes</span> of why you are my home.</p>
             </div>
-            <button onClick={() => { unlockMedia(); Haptics.selection(); setState(prev => ({ ...prev, hasSeenIntro: true, startDate: new Date().toISOString() })); setView(GameView.WHEEL); }} className="px-10 py-3.5 glass rounded-full text-[9px] uppercase tracking-[0.6em] text-white/40 hover:text-white transition-all duration-700 border-white/10 active:scale-95 shadow-xl">Begin</button>
+            <button onClick={() => { Haptics.selection(); setState(prev => ({ ...prev, hasSeenIntro: true, startDate: new Date().toISOString() })); setView(GameView.WHEEL); }} className="px-10 py-3.5 glass rounded-full text-[9px] uppercase tracking-[0.6em] text-white/40 hover:text-white transition-all duration-700 border-white/10 active:scale-95 shadow-xl">Begin</button>
           </div>
         </div>
       )}
@@ -207,7 +222,7 @@ const App: React.FC = () => {
              <WheelOfFortune onSpinComplete={handleSpinComplete} canSpin={canSpinToday(state)} forceWinType={SCHEDULE[journeyDay]?.type || 'echo'} />
           </div>
           <div className="mt-14 flex flex-col items-center gap-6">
-            <button onClick={() => { unlockMedia(); Haptics.selection(); setView(GameView.COLLECTION); }} className="text-[10px] uppercase tracking-[0.6em] text-white/60 hover:text-white transition-all font-light py-4 px-10 glass rounded-full shadow-2xl">Access Archive</button>
+            <button onClick={() => { Haptics.selection(); setView(GameView.COLLECTION); }} className="text-[10px] uppercase tracking-[0.6em] text-white/60 hover:text-white transition-all font-light py-4 px-10 glass rounded-full shadow-2xl">Access Archive</button>
             <button onClick={() => { setState(prev => ({ ...prev, isLoggedIn: false })); setView(GameView.LOGIN); setRiddleInput(''); }} className="text-[7px] uppercase tracking-[0.5em] text-white/10 hover:text-white/30 transition-all font-light mt-8">Secure Interface</button>
           </div>
         </div>
