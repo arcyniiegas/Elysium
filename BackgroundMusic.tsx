@@ -24,7 +24,8 @@ const BackgroundMusic = forwardRef<BackgroundMusicRef, BackgroundMusicProps>(({ 
     if (audioCtxRef.current || !audioRef.current) return;
 
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+      const audioCtx = new AudioContextClass();
       const source = audioCtx.createMediaElementSource(audioRef.current);
       const filter = audioCtx.createBiquadFilter();
       const gain = audioCtx.createGain();
@@ -49,30 +50,42 @@ const BackgroundMusic = forwardRef<BackgroundMusicRef, BackgroundMusicProps>(({ 
   useImperativeHandle(ref, () => ({
     unlock: () => {
       initAudio();
-      if (audioCtxRef.current?.state === 'suspended') {
-        audioCtxRef.current.resume();
+      const ctx = audioCtxRef.current;
+      const audio = audioRef.current;
+      
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume();
       }
-      if (audioRef.current) {
-        // iOS: The element must be played during the touch event
-        audioRef.current.play()
+      
+      if (audio) {
+        // Essential iOS "Blessing": MUST call play within user-initiated stack
+        audio.play()
           .then(() => {
-             // If we shouldn't actually be playing yet, pause it. 
-             // But it is now "blessed" for later.
-             if (!shouldPlay) audioRef.current?.pause();
+            if (!shouldPlay) {
+              audio.pause();
+            }
           })
-          .catch(e => console.warn("BackgroundMusic: Mobile Unlock Failed", e));
+          .catch(e => {
+            console.warn("BackgroundMusic: Initial play failed on mobile", e);
+          });
       }
     }
   }));
 
   useEffect(() => {
-    if (shouldPlay && audioRef.current) {
-      if (audioCtxRef.current?.state === 'suspended') {
-        audioCtxRef.current.resume();
+    const audio = audioRef.current;
+    const ctx = audioCtxRef.current;
+    
+    if (shouldPlay && audio) {
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          audio.play().catch(e => console.warn("BackgroundMusic: Deferred play failed", e));
+        });
+      } else {
+        audio.play().catch(e => console.warn("BackgroundMusic: Direct play failed", e));
       }
-      audioRef.current.play().catch(e => console.warn("BackgroundMusic: Play deferred", e));
-    } else if (!shouldPlay && audioRef.current) {
-      audioRef.current.pause();
+    } else if (!shouldPlay && audio) {
+      audio.pause();
     }
   }, [shouldPlay]);
 

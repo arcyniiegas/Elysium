@@ -67,23 +67,24 @@ const App: React.FC = () => {
   const unlockMedia = () => {
     if (mediaUnlocked) return;
     setMediaUnlocked(true);
-    // iOS MUST have a play call inside a touch event to unlock the element
-    if (musicRef.current) musicRef.current.unlock();
+    if (musicRef.current) {
+      musicRef.current.unlock();
+    }
     Haptics.impactHeavy();
   };
 
+  // Aggressive unlock for iOS Safari
   useEffect(() => {
-    const unlock = (e: Event) => {
+    const handleTouch = () => {
       unlockMedia();
-      // Only remove after successful interaction
-      window.removeEventListener('click', unlock);
-      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('touchstart', handleTouch);
+      window.removeEventListener('mousedown', handleTouch);
     };
-    window.addEventListener('click', unlock);
-    window.addEventListener('touchstart', unlock);
+    window.addEventListener('touchstart', handleTouch, { passive: false });
+    window.addEventListener('mousedown', handleTouch);
     return () => {
-      window.removeEventListener('click', unlock);
-      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('touchstart', handleTouch);
+      window.removeEventListener('mousedown', handleTouch);
     };
   }, [mediaUnlocked]);
 
@@ -216,19 +217,23 @@ const App: React.FC = () => {
 
       {view === GameView.WHEEL && (
         <div className="relative z-10 flex flex-col items-center justify-center h-full p-6 pt-safe pb-safe animate-fade-in">
-          <div className="mb-10 text-center">
+          <div className="mb-10 text-center flex flex-col items-center">
              <h2 className="text-3xl md:text-5xl font-serif text-white">{isComplete ? "Legacy Secured" : `Sequence ${state.spinHistory.length + 1}`}</h2>
              <p className="text-[8px] uppercase tracking-[0.8em] text-white/20 mt-4 font-mono">
               {isComplete ? "System Offline — Archive Active" : canSpin ? "Consulting Probabilities..." : "Atmosphere Recharging..."}
              </p>
           </div>
+
           <div className="relative flex items-center justify-center">
              <WheelOfFortune onSpinComplete={handleSpinComplete} canSpin={canSpin} forceWinType={SCHEDULE[journeyDay]?.type || 'echo'} />
           </div>
           
           {!canSpin && !isComplete && (
-            <div className="mt-8 px-8 py-3 glass rounded-2xl border-white/5 animate-pulse">
-               <p className="text-[7px] uppercase tracking-[0.4em] text-white/40">The next sequence will be available in a new light.</p>
+            <div className="mt-12 flex flex-col items-center animate-fade-in">
+              <div className="h-px w-12 bg-white/10 mb-6"></div>
+              <p className="text-[7px] uppercase tracking-[0.5em] text-white/30 text-center max-w-[240px] leading-loose">
+                The next sequence will be available <br/> when a new light emerges tomorrow.
+              </p>
             </div>
           )}
 
