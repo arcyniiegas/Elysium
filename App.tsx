@@ -5,7 +5,6 @@ import { MUSEUMS, REASONS_WHY_I_LOVE_YOU, RIDDLES, CONTACT_CONFIG } from './cons
 import { loadState, saveState, canSpinToday, getCurrentJourneyDay } from './storage';
 import { Haptics } from './haptics';
 
-// Root-level component imports
 import BackgroundVideo from './BackgroundVideo';
 import WheelOfFortune from './WheelOfFortune';
 import CollectionBoard from './CollectionBoard';

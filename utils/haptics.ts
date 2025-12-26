@@ -1,6 +1,6 @@
 
 /**
- * Elysium Synthetic Haptic Engine (v2.1)
+ * Elysium Synthetic Haptic Engine (v2.0)
  */
 
 let audioCtx: AudioContext | null = null;
@@ -16,27 +16,23 @@ const getCtx = () => {
 };
 
 const createPulse = (freq: number, endFreq: number, duration: number, volume: number, type: OscillatorType = 'sine') => {
-  try {
-    const ctx = getCtx();
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+  const ctx = getCtx();
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
 
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, now);
-    osc.frequency.exponentialRampToValueAtTime(endFreq || 0.001, now + duration);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  osc.frequency.exponentialRampToValueAtTime(endFreq || 0.001, now + duration);
 
-    gain.gain.setValueAtTime(volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+  gain.gain.setValueAtTime(volume, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
 
-    osc.start(now);
-    osc.stop(now + duration);
-  } catch (e) {
-    console.warn("Haptics: Device context not ready.");
-  }
+  osc.start(now);
+  osc.stop(now + duration);
 };
 
 export const Haptics = {

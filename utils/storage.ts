@@ -1,5 +1,5 @@
 
-import { UserState } from './types';
+import { UserState } from '../types';
 
 const STORAGE_KEY = 'elysium_v2_journey';
 
